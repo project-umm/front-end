@@ -45,12 +45,12 @@ const LoginPage = () => {
                 type="password"
                 id="password"
                 placeholder="비밀번호"
+                onKeyDown={handleEnterLogin}
                 className="w-full p-2 border border-umm-gray rounded"
               />
             </div>
             <button
               type="submit"
-              onKeyDown={handleEnterLogin}
               className="w-full mt-6 bg-umm-gray text-white py-2 rounded hover:bg-opacity-90 transition-colors cursor-pointer"
             >
               로그인
