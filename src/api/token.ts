@@ -73,3 +73,9 @@ export const clearTokens = () => {
   removeAccessToken();
   removeRefreshToken();
 };
+
+// 액세스 토큰과 리프레시 토큰을 한 번에 설정
+export const setTokens = (accessToken: string, refreshToken: string) => {
+  setAccessToken(accessToken);
+  setRefreshToken(refreshToken);
+};
