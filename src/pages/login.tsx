@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Router from "next/router";
-
+import { login } from "@/api/auth";
+import { HttpStatusCode } from "axios";
 const LoginPage = () => {
   useEffect(() => {
     const accessToken = localStorage.getItem("accessToken");
@@ -9,9 +10,21 @@ const LoginPage = () => {
     }
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 로그인 로직 구현
+    const loginResponse = await login({
+      username,
+      password,
+    });
+
+    if (loginResponse.status === HttpStatusCode.Ok) {
+      Router.push("/dashboard");
+    } else {
+      alert("로그인에 실패했습니다. 이메일이나 비밀번호를 확인해주세요.");
+    }
   };
 
   const handleEnterLogin = (e: React.KeyboardEvent) => {
@@ -22,7 +35,7 @@ const LoginPage = () => {
 
   return (
     <div className="w-full h-full flex justify-center items-center">
-      <div className="w-1/3 h-1/3 border-2 border-umm-gray max-w-[600px] max-h-[500px] rounded-lg">
+      <div className="w-1/3 h-1/3 border-2 border-umm-gray max-w-[600px] max-h-[500px] min-h-[400px] rounded-lg">
         <div className="flex flex-col justify-center items-center p-8">
           <span className="text-4xl font-chosun mb-8">音</span>
           <form onSubmit={handleSubmit} className="w-full space-y-4">
@@ -32,9 +45,10 @@ const LoginPage = () => {
               </label>
               <input
                 type="text"
-                id="id"
+                id="email"
                 placeholder="이메일"
                 className="w-full p-2 border border-umm-gray rounded"
+                onChange={(e) => setUsername(e.target.value)}
               />
             </div>
             <div className="flex flex-col space-y-2">
@@ -47,6 +61,7 @@ const LoginPage = () => {
                 placeholder="비밀번호"
                 onKeyDown={handleEnterLogin}
                 className="w-full p-2 border border-umm-gray rounded"
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             <button

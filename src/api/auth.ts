@@ -16,14 +16,14 @@ interface TokenResponse {
  * @param data 로그인 요청 데이터 (username, password)
  * @returns 토큰 정보 (access, refresh)
  */
-export const login = async (data: LoginRequest): Promise<TokenResponse> => {
+export const login = async (data: LoginRequest) => {
   const response = await axiosInstance.post<TokenResponse>(
     "/api/users/signin",
     data
   );
   const { access, refresh } = response.data;
   setTokens(access, refresh);
-  return response.data;
+  return response;
 };
 
 /**
