@@ -41,12 +41,12 @@ const LoginPage = () => {
           <form onSubmit={handleSubmit} className="w-full space-y-4">
             <div className="flex flex-col space-y-2">
               <label htmlFor="id" className="text-left font-bold">
-                이메일
+                아이디
               </label>
               <input
                 type="text"
-                id="email"
-                placeholder="이메일"
+                id="id"
+                placeholder="아이디"
                 className="w-full p-2 border border-umm-gray rounded"
                 onChange={(e) => setUsername(e.target.value)}
               />
