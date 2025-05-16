@@ -18,7 +18,7 @@ interface TokenResponse {
  */
 export const login = async (data: LoginRequest) => {
   const response = await axiosInstance.post<TokenResponse>(
-    "/api/users/signup",
+    "/api/users/signin",
     data
   );
   const { access, refresh } = response.data;
