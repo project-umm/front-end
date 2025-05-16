@@ -31,7 +31,8 @@ const LoginPage = () => {
 
   const handleEnterLogin = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      handleSubmit(e);
+      e.preventDefault();
+      handleSubmit(e as unknown as React.FormEvent);
     }
   };
 
@@ -40,7 +41,7 @@ const LoginPage = () => {
       <div className="w-1/3 h-1/3 border-2 border-umm-gray max-w-[600px] max-h-[500px] min-h-[400px] rounded-lg">
         <div className="flex flex-col justify-center items-center p-8">
           <span className="text-4xl font-chosun mb-8">音</span>
-          <form onSubmit={handleSubmit} className="w-full space-y-4">
+          <form className="w-full space-y-4">
             <div className="flex flex-col space-y-2">
               <label htmlFor="id" className="text-left font-bold">
                 아이디
@@ -67,7 +68,8 @@ const LoginPage = () => {
               />
             </div>
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               className="w-full mt-6 bg-umm-gray text-white py-2 rounded hover:bg-opacity-90 transition-colors cursor-pointer"
             >
               로그인
