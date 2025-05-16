@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import Router from "next/router";
 import { login } from "@/api/auth";
 import { HttpStatusCode } from "axios";
+import { getAccessToken } from "@/api/token";
+
 const LoginPage = () => {
   useEffect(() => {
-    const accessToken = localStorage.getItem("accessToken");
+    const accessToken = getAccessToken();
     if (accessToken) {
       Router.push("/dashboard");
     }
