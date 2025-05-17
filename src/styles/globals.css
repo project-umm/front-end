@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   --background: #ffffff;
@@ -11,7 +11,7 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --color-umm-gray: #222225;
-  --font-chosun: "ChosunGs", sans-serif;
+  --font-chosun: 'ChosunGs', sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -28,9 +28,9 @@ body {
 }
 
 @font-face {
-  font-family: "ChosunGs";
-  src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/ChosunGs.woff")
-    format("woff");
+  font-family: 'ChosunGs';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/ChosunGs.woff')
+    format('woff');
   font-weight: normal;
   font-style: normal;
 }
