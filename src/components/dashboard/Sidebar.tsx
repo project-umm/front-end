@@ -6,7 +6,7 @@ import { UserProfile } from './UserProfile';
 
 export const Sidebar = () => {
   return (
-    <aside className="w-[400px] h-full border-umm-gray border-l-2 rounded-lg flex flex-col">
+    <aside className="w-[400px] h-full rounded-lg flex flex-col">
       <nav className="w-full h-full flex">
         <section
           className="w-[80px] h-full border-umm-gray border-r-2 flex flex-col"
