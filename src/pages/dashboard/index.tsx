@@ -1,29 +1,24 @@
-import { clearTokens, getAccessToken } from "@/api/token";
-import { isEmpty } from "lodash";
-import Router from "next/router";
-import React, { useEffect } from "react";
+import { getAccessToken } from '@/api/token';
+import { isEmpty } from 'lodash';
+import Router from 'next/router';
+import React, { useEffect } from 'react';
+import { Sidebar } from '@/components/dashboard/Sidebar';
+import { MainContent } from '@/components/dashboard/MainContent';
 
 const DashboardPage = () => {
   useEffect(() => {
     const accessToken = getAccessToken();
     if (isEmpty(accessToken)) {
-      Router.push("/login");
+      Router.push('/login');
     }
   }, []);
 
   return (
-    <div className="w-full h-full p-8">
-      Dashboard
-      <br />
-      <button
-        className="cursor-pointer"
-        onClick={() => {
-          clearTokens();
-          Router.push("/");
-        }}
-      >
-        logout for test
-      </button>
+    <div className="w-full h-full p-4">
+      <div className="w-full h-full border-umm-gray border-2 rounded-lg flex">
+        <Sidebar />
+        <MainContent />
+      </div>
     </div>
   );
 };

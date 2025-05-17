@@ -1,19 +1,19 @@
-import React, { useEffect, useState } from "react";
-import Router from "next/router";
-import { login } from "@/api/auth";
-import { HttpStatusCode } from "axios";
-import { getAccessToken } from "@/api/token";
+import React, { useEffect, useState } from 'react';
+import Router from 'next/router';
+import { login } from '@/api/auth';
+import { HttpStatusCode } from 'axios';
+import { getAccessToken } from '@/api/token';
 
 const LoginPage = () => {
   useEffect(() => {
     const accessToken = getAccessToken();
     if (accessToken) {
-      Router.push("/dashboard");
+      Router.push('/dashboard');
     }
   }, []);
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,14 +23,14 @@ const LoginPage = () => {
     });
 
     if (loginResponse.status === HttpStatusCode.Ok) {
-      Router.push("/dashboard");
+      Router.push('/dashboard');
     } else {
-      alert("로그인에 실패했습니다. 이메일이나 비밀번호를 확인해주세요.");
+      alert('로그인에 실패했습니다. 이메일이나 비밀번호를 확인해주세요.');
     }
   };
 
   const handleEnterLogin = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       handleSubmit(e as unknown as React.FormEvent);
     }
@@ -51,7 +51,7 @@ const LoginPage = () => {
                 id="id"
                 placeholder="아이디"
                 className="w-full p-2 border border-umm-gray rounded"
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={e => setUsername(e.target.value)}
               />
             </div>
             <div className="flex flex-col space-y-2">
@@ -64,7 +64,7 @@ const LoginPage = () => {
                 placeholder="비밀번호"
                 onKeyDown={handleEnterLogin}
                 className="w-full p-2 border border-umm-gray rounded"
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
               />
             </div>
             <button
