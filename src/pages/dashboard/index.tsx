@@ -4,6 +4,14 @@ import Router from 'next/router';
 import React, { useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faPlus } from '@fortawesome/free-solid-svg-icons';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 const DashboardPage = () => {
   useEffect(() => {
@@ -57,16 +65,34 @@ const DashboardPage = () => {
             ></div>
           </div>
         </aside>
-        <article className="w-full h-full rounded-r-lg" aria-label="대시보드 메인 콘텐츠">
+        <article
+          className="w-full h-full rounded-r-lg flex-col flex"
+          aria-label="대시보드 메인 콘텐츠"
+        >
           <div className="w-full h-[45px] border-b-2 border-umm-gray flex items-center gap-2 px-4">
             <FriendButton />
             <button className="bg-umm-gray text-white rounded-lg whitespace-nowrap p-1">
-              <b>친구 추가하기</b>
+              <Dialog>
+                <DialogTrigger>
+                  <b>친구 추가하기</b>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Are you absolutely sure?</DialogTitle>
+                    <DialogDescription>
+                      This action cannot be undone. This will permanently delete your account and
+                      remove your data from our servers.
+                    </DialogDescription>
+                  </DialogHeader>
+                </DialogContent>
+              </Dialog>
             </button>
           </div>
-          <div className="w-full h-full flex ">
-            <div className="w-2/3 h-full border-r-2 border-umm-gray"></div>
-            <div className="w-1/3 h-full"></div>
+          <div className="w-full h-full flex">
+            <div className="w-2/3 h-full border-r-2 border-umm-gray p-3">채팅창 자리</div>
+            <div className="w-1/3 h-full p-3">
+              <b>현재 활동 중</b>
+            </div>
           </div>
         </article>
       </div>
