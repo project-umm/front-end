@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FriendButton } from './FriendButton';
 import { UserProfile } from './UserProfile';
+import { getFriendRequests } from '@/api/friend';
 
 export const Sidebar = () => {
+  useEffect(() => {
+    const fetchFriendRequests = async () => {
+      const { ask_users } = await getFriendRequests();
+      console.log(ask_users);
+    };
+    fetchFriendRequests();
+  }, []);
+
   return (
     <aside className="w-[400px] h-full rounded-lg flex flex-col">
       <nav className="w-full h-full flex">

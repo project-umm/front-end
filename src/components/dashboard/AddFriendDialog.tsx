@@ -11,16 +11,21 @@ import {
 export const AddFriendDialog = () => {
   return (
     <Dialog>
-      <DialogTrigger>
-        <button className="bg-umm-gray text-white rounded-lg whitespace-nowrap p-1">
+      <DialogTrigger asChild>
+        <div className="bg-umm-gray text-white rounded-lg whitespace-nowrap p-1 cursor-pointer">
           <b>친구 추가하기</b>
-        </button>
+        </div>
       </DialogTrigger>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>친구 추가하기</DialogTitle>
-          <DialogDescription></DialogDescription>
-        </DialogHeader>
+        <div className="min-h-[300px] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>친구 추가하기</DialogTitle>
+            <DialogDescription></DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 flex items-center justify-center">
+            {/* 여기에 친구 추가 폼이 들어갈 예정 */}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
