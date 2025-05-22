@@ -1,25 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { FriendButton } from './FriendButton';
 import { AddFriendDialog } from './AddFriendDialog';
-import { faBell } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { FriendRequest, getFriendRequests } from '@/api/friend';
+import { AlarmDialog } from './AlarmDialog';
+import { getFriendRequests } from '@/api/friend';
 
-export const MainContent = () => {
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
+interface MainContentProps {
+  alarmNumber?: number;
+}
+
+export const MainContent = ({ alarmNumber }: MainContentProps) => {
+  const [notificationCount, setNotificationCount] = useState(alarmNumber || 0);
 
   const fetchFriendRequests = async () => {
     try {
       const { ask_users } = await getFriendRequests();
-      setFriendRequests(ask_users);
       setNotificationCount(ask_users.length);
     } catch (error) {
       console.error('알람 목록을 가져오는데 실패했습니다:', error);
@@ -38,32 +32,7 @@ export const MainContent = () => {
           <AddFriendDialog />
         </div>
         <div className="flex justify-center items-center relative">
-          <Dialog>
-            <DialogTrigger asChild>
-              <button className="cursor-pointer">
-                <FontAwesomeIcon icon={faBell} className="text-2xl" />
-              </button>
-            </DialogTrigger>
-            <DialogContent>
-              <div className="min-h-[300px] flex flex-col">
-                <DialogHeader>
-                  <DialogTitle>알람</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 flex items-center justify-center">
-                  {friendRequests.length === 0 ? (
-                    <p className="text-gray-500">새로운 알람이 없습니다.</p>
-                  ) : (
-                    <div className="space-y-4"></div>
-                  )}
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-          {notificationCount > 0 && (
-            <div className="absolute bottom-1 right-0 translate-x-1/2 translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-              {notificationCount}
-            </div>
-          )}
+          <AlarmDialog notificationCount={notificationCount} />
         </div>
       </div>
       <div className="w-full h-full flex">

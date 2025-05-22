@@ -1,6 +1,7 @@
 import axiosInstance from './axios';
 import { User } from './user';
 import { AxiosError } from 'axios';
+import { UsersResponse } from './user';
 
 export interface FriendRequest {
   ask_id: number;
@@ -46,7 +47,7 @@ export const requestFriend = async (username: string): Promise<FriendRequestResp
  */
 export const getFriendRequests = async (): Promise<FriendRequestsResponse> => {
   try {
-    const response = await axiosInstance.get<FriendRequestsResponse>('/api/friends/alarm');
+    const response = await axiosInstance.get<FriendRequestsResponse>('/api/friends/alarms');
     return response.data;
   } catch (error: unknown) {
     if (error instanceof AxiosError && error.response) {
@@ -79,6 +80,22 @@ export const answerFriendRequest = async (askId: number, answer: boolean): Promi
 export const getFriends = async (): Promise<FriendsResponse> => {
   try {
     const response = await axiosInstance.get<FriendsResponse>('/api/friends');
+    return response.data;
+  } catch (error: unknown) {
+    if (error instanceof AxiosError && error.response) {
+      return error.response.data;
+    }
+    throw error;
+  }
+};
+
+// 유저 목록 조회 (친구 추가용)
+export const getUsers = async (nickname?: string): Promise<UsersResponse> => {
+  try {
+    const response = await axiosInstance.get<UsersResponse>('/api/friends/users', {
+      params: { nickname },
+    });
+    console.log(response.data);
     return response.data;
   } catch (error: unknown) {
     if (error instanceof AxiosError && error.response) {

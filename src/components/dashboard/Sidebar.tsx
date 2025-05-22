@@ -1,17 +1,27 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FriendButton } from './FriendButton';
 import { UserProfile } from './UserProfile';
-import { getFriendRequests } from '@/api/friend';
+import { getFriends } from '@/api/friend';
+import { User } from '@/api/user';
+import Image from 'next/image';
 
-export const Sidebar = () => {
+interface SidebarProps {
+  profileUrl?: string;
+  nickname?: string;
+}
+
+export const Sidebar = ({ profileUrl, nickname }: SidebarProps) => {
+  const [friends, setFriends] = useState<User[]>([]);
+
   useEffect(() => {
-    const fetchFriendRequests = async () => {
-      const { ask_users } = await getFriendRequests();
-      console.log(ask_users);
+    const fetchFriends = async () => {
+      const fetchedFriends = await getFriends();
+      setFriends(fetchedFriends.friends);
     };
-    fetchFriendRequests();
+
+    fetchFriends();
   }, []);
 
   return (
@@ -34,12 +44,28 @@ export const Sidebar = () => {
           <div className="w-full h-full p-3">
             <div className="w-full flex items-center justify-between">
               <b className="text-md">다이렉트 메세지</b>
-              <FontAwesomeIcon icon={faPlus} className="text-sm" />
+              <FontAwesomeIcon
+                icon={faPlus}
+                className="text-sm hover:bg-umm-gray p-1 rounded-full transition-colors cursor-pointer"
+              />
+            </div>
+            <div className="w-full h-[calc(100%-2rem)] overflow-y-auto flex flex-col gap-2 py-4">
+              {friends.map(friend => (
+                <div key={friend.username} className="flex items-center gap-4">
+                  <Image
+                    src={friend.profile_url || '/favicon.ico'}
+                    alt={friend.nickname}
+                    width={30}
+                    height={30}
+                  />
+                  {friend.nickname}
+                </div>
+              ))}
             </div>
           </div>
         </section>
       </nav>
-      <UserProfile />
+      <UserProfile profileUrl={profileUrl} nickname={nickname} />
     </aside>
   );
 };
