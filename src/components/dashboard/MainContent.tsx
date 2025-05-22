@@ -26,7 +26,7 @@ export const MainContent = ({ alarmNumber }: MainContentProps) => {
 
   return (
     <article className="w-full h-full rounded-r-lg flex-col flex" aria-label="대시보드 메인 콘텐츠">
-      <div className="w-full h-[45px] border-b-2 border-umm-gray flex items-center gap-2 px-4 justify-between">
+      <div className="w-full h-[47px] border-b-2 border-umm-gray flex items-center gap-2 px-4 justify-between">
         <div className="flex items-center gap-2 justify-center">
           <FriendButton />
           <AddFriendDialog />
