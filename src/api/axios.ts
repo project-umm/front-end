@@ -56,7 +56,6 @@ axiosInstance.interceptors.response.use(
       // 리프레시 시도 중이 아닐 때
       if (!isRefreshing) {
         isRefreshing = true;
-        console.log('1');
         try {
           const newAccessToken = await refreshAccessToken();
           isRefreshing = false;

@@ -29,7 +29,7 @@ export const UserProfile = ({ profileUrl, nickname }: UserProfileProps) => {
       >
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-2">
-            <div className="w-12 h-12 rounded-full overflow-hidden relative mr-2">
+            <div className="w-12 h-12 rounded-full overflow-hidden relative mr-2 border-[#222225] border">
               <Image
                 src={profileUrl || '/favicon.ico'}
                 alt="프로필 이미지"

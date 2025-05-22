@@ -95,7 +95,6 @@ export const getUsers = async (nickname?: string): Promise<UsersResponse> => {
     const response = await axiosInstance.get<UsersResponse>('/api/friends/users', {
       params: { nickname },
     });
-    console.log(response.data);
     return response.data;
   } catch (error: unknown) {
     if (error instanceof AxiosError && error.response) {

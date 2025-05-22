@@ -57,6 +57,7 @@ export const Sidebar = ({ profileUrl, nickname }: SidebarProps) => {
                     alt={friend.nickname}
                     width={30}
                     height={30}
+                    className="object-cover border-[#222225] border rounded-full"
                   />
                   {friend.nickname}
                 </div>
