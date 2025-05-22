@@ -1,38 +1,25 @@
-import axios, {
-  InternalAxiosRequestConfig,
-  AxiosResponse,
-  AxiosError,
-} from "axios";
-import {
-  getAccessToken,
-  getRefreshToken,
-  setAccessToken,
-  clearTokens,
-} from "./token";
-import { refreshToken } from "./auth";
+import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import { getAccessToken, getRefreshToken, setAccessToken, clearTokens } from './token';
+import { refreshToken } from './auth';
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL;
 
-// 토큰 리프레시 중인지 확인하는 플래그
 let isRefreshing = false;
-// 리프레시 중일 때 대기할 요청들을 저장하는 배열
 let refreshSubscribers: ((token: string) => void)[] = [];
 
-// 리프레시 완료 후 대기 중인 요청들을 실행
 const onRefreshed = (token: string) => {
-  refreshSubscribers.forEach((callback) => callback(token));
+  refreshSubscribers.forEach(callback => callback(token));
   refreshSubscribers = [];
 };
 
-// 리프레시 토큰으로 새로운 액세스 토큰을 발급받는 함수
-const refreshAccessToken = async () => {
+const refreshAccessToken = async (): Promise<string> => {
   try {
     const refreshTokenValue = getRefreshToken();
     if (!refreshTokenValue) {
-      throw new Error("리프레시 토큰이 없습니다.");
+      throw new Error('리프레시 토큰이 없습니다.');
     }
 
-    const { access } = await refreshToken(refreshTokenValue);
+    const { access } = await refreshToken(refreshTokenValue); // 여기서 실패 시 에러를 throw 해야 함
     setAccessToken(access);
     return access;
   } catch (error) {
@@ -45,11 +32,10 @@ const axiosInstance = axios.create({
   baseURL,
   timeout: 10000,
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
 });
 
-// 요청 인터셉터
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken();
@@ -58,29 +44,24 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error: AxiosError) => {
-    return Promise.reject(error);
-  }
+  (error: AxiosError) => Promise.reject(error)
 );
 
-// 응답 인터셉터
 axiosInstance.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response;
-  },
+  (response: AxiosResponse) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && originalRequest) {
+      // 리프레시 시도 중이 아닐 때
       if (!isRefreshing) {
         isRefreshing = true;
-
+        console.log('1');
         try {
           const newAccessToken = await refreshAccessToken();
           isRefreshing = false;
           onRefreshed(newAccessToken);
 
-          // 실패했던 요청 재시도
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           }
@@ -88,35 +69,51 @@ axiosInstance.interceptors.response.use(
         } catch (refreshError) {
           isRefreshing = false;
           clearTokens();
-          // TODO: 로그인 페이지로 리다이렉트
+          if (typeof window !== 'undefined') {
+            alert('로그인 시간이 만료되었습니다. 다시 로그인 해주세요.');
+            window.location.href = '/login';
+          }
           return Promise.reject(refreshError);
         }
-      } else {
-        // 이미 리프레시 중이면 새로운 토큰을 기다림
-        return new Promise((resolve) => {
-          refreshSubscribers.push((token: string) => {
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-            }
-            resolve(axiosInstance(originalRequest));
-          });
+      }
+
+      // 이미 리프레시 중이면 기다렸다가 재시도
+      return new Promise(resolve => {
+        refreshSubscribers.push((token: string) => {
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+          }
+          resolve(axiosInstance(originalRequest));
         });
+      });
+    }
+
+    // 401 에러이면서 리프레시 토큰 요청이 실패한 경우
+    if (error.response?.status === 401 && originalRequest?.url?.includes('token/refresh')) {
+      clearTokens();
+      if (typeof window !== 'undefined') {
+        alert('로그인 시간이 만료되었습니다. 다시 로그인 해주세요.');
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
+    }
+
+    // 기타 에러 처리
+    if (error.response) {
+      const status = error.response.status;
+
+      if (status === 401 && !originalRequest?.url?.includes('token/refresh')) {
+        clearTokens();
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+      } else if (status === 403) {
+        console.error('접근 권한이 없습니다.');
+      } else if (status === 404) {
+        console.error('요청한 리소스를 찾을 수 없습니다.');
       }
     }
 
-    if (error.response) {
-      switch (error.response.status) {
-        case 403:
-          // 권한 오류 처리
-          break;
-        case 404:
-          // 리소스를 찾을 수 없는 경우
-          break;
-        default:
-          // 기타 오류 처리
-          break;
-      }
-    }
     return Promise.reject(error);
   }
 );
