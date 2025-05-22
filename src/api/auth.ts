@@ -1,6 +1,17 @@
-import axiosInstance from "./axios";
-import { setTokens } from "./token";
-import { AxiosError } from "axios";
+import axios from 'axios';
+import { setTokens } from './token';
+import { AxiosError } from 'axios';
+import axiosInstance from './axios';
+
+const baseURL = process.env.NEXT_PUBLIC_API_URL;
+
+// 리프레시 토큰 전용 axios 인스턴스
+const refreshAxiosInstance = axios.create({
+  baseURL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 interface LoginRequest {
   username: string;
@@ -19,10 +30,7 @@ interface TokenResponse {
  */
 export const login = async (data: LoginRequest) => {
   try {
-    const response = await axiosInstance.post<TokenResponse>(
-      "/api/users/signin",
-      data
-    );
+    const response = await axiosInstance.post<TokenResponse>('/api/users/signin', data);
     const { access, refresh } = response.data;
     setTokens(access, refresh);
     return response;
@@ -39,22 +47,17 @@ export const login = async (data: LoginRequest) => {
  * @param refreshToken 갱신 토큰
  * @returns 새로운 토큰 정보 (access, refresh)
  */
-export const refreshToken = async (
-  refreshToken: string
-): Promise<TokenResponse> => {
+export const refreshToken = async (refreshToken: string): Promise<TokenResponse> => {
   try {
-    const response = await axiosInstance.post<TokenResponse>(
-      "/api/users/token/refresh",
-      {
-        refresh: refreshToken,
-      }
-    );
+    const response = await refreshAxiosInstance.post<TokenResponse>('/api/users/token/refresh', {
+      refresh: refreshToken,
+    });
     const { access, refresh } = response.data;
     setTokens(access, refresh);
     return response.data;
   } catch (error: unknown) {
     if (error instanceof AxiosError && error.response) {
-      return error.response.data;
+      throw error;
     }
     throw error;
   }
