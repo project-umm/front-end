@@ -67,7 +67,7 @@ export const AlarmDialog = ({ notificationCount = 0 }: AlarmDialogProps) => {
           {requests.map(request => (
             <div key={request.ask_id} className="flex items-start justify-between w-full h-full">
               <div className="flex items-center gap-3">
-                <div className="relative w-8 h-8 rounded-full overflow-hidden bg-gray-600">
+                <div className="relative w-8 h-8 rounded-full overflow-hidden bg-gray-600 border-[#222225] border">
                   {request.profile_url ? (
                     <Image
                       src={request.profile_url}

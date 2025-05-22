@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { HttpStatusCode, AxiosError } from 'axios';
 
 interface SearchResult {
   id: string;
@@ -77,18 +78,19 @@ export const AddFriendDialog = () => {
 
     setIsSubmitting(true);
     try {
-      const responses = await Promise.all(selectedUsers.map(user => requestFriend(user.username)));
-      if (responses[0]?.message) {
-        alert(responses[0].message);
-        return;
-      }
+      await Promise.all(selectedUsers.map(user => requestFriend(user.username)));
+
       alert('친구 요청을 보냈습니다.');
       setSearchResults([]);
       setSearchQuery('');
       setOpen(false);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('친구 추가 중 오류가 발생했습니다:', error);
-      alert('친구 요청 중 오류가 발생했습니다.');
+      if (error instanceof AxiosError && error.response?.status === HttpStatusCode.BadRequest) {
+        alert(error.response.data.message);
+      } else {
+        alert('친구 요청 중 오류가 발생했습니다.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -132,13 +134,13 @@ export const AddFriendDialog = () => {
                     onClick={() => handleCheckboxChange(user.id, !user.isSelected)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                      <div className="relative w-8 h-8 rounded-full overflow-hidden border-[#222225] border">
                         {user.profile_url ? (
                           <Image
                             src={user.profile_url}
                             alt={`${user.nickname}의 프로필`}
                             fill
-                            className="object-cover"
+                            className="object-cover "
                           />
                         ) : (
                           <Image
