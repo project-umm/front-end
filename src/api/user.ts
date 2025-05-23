@@ -26,7 +26,7 @@ export const getMyProfile = async (): Promise<UserProfileResponse> => {
     return response.data;
   } catch (error: unknown) {
     if (error instanceof AxiosError && error.response) {
-      return error.response.data;
+      throw error;
     }
     throw error;
   }
@@ -41,7 +41,7 @@ export const getUserProfile = async (nickname: string): Promise<UserProfileRespo
     return response.data;
   } catch (error: unknown) {
     if (error instanceof AxiosError && error.response) {
-      return error.response.data;
+      throw error;
     }
     throw error;
   }
