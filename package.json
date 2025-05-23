@@ -1,5 +1,5 @@
 {
-  "name": "my-app",
+  "name": "UMM",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -25,6 +25,7 @@
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "electron-is-dev": "^3.0.1",
     "electron-updater": "^6.6.2",
     "js-cookie": "^3.0.5",
     "lodash": "^4.17.21",
@@ -45,7 +46,6 @@
     "concurrently": "^9.1.2",
     "electron": "^36.3.1",
     "electron-builder": "^26.0.12",
-    "electron-is-dev": "^3.0.1",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
     "postcss": "8.4.31",
@@ -70,17 +70,27 @@
     "publish": {
       "provider": "github",
       "owner": "project-umm",
-      "repo": "umm"
+      "repo": "front-end"
     },
     "mac": {
       "category": "public.app-category.developer-tools",
-      "icon": "public/umm.icns"
+      "icon": "public/umm.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "artifactName": "${productName}-${version}.${ext}"
     },
     "win": {
       "target": [
         "nsis"
       ],
-      "icon": "public/umm.ico"
+      "icon": "public/umm.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "linux": {
       "target": [
