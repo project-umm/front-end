@@ -2,6 +2,9 @@ import { app, BrowserWindow } from 'electron';
 import pkg from 'electron-updater';
 const { autoUpdater } = pkg;
 
+// 앱 이름 설정
+app.name = 'UMM';
+
 const PRODUCTION_URL = 'https://www.project-umm.com';
 const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
 
