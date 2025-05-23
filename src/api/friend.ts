@@ -35,7 +35,7 @@ export const requestFriend = async (username: string): Promise<FriendRequestResp
     return response.data;
   } catch (error: unknown) {
     if (error instanceof AxiosError && error.response) {
-      return error.response.data;
+      throw error;
     }
     throw error;
   }
@@ -51,7 +51,7 @@ export const getFriendRequests = async (): Promise<FriendRequestsResponse> => {
     return response.data;
   } catch (error: unknown) {
     if (error instanceof AxiosError && error.response) {
-      return error.response.data;
+      throw error;
     }
     throw error;
   }
@@ -67,7 +67,7 @@ export const answerFriendRequest = async (askId: number, answer: boolean): Promi
     await axiosInstance.post('/api/friends/answer', { ask_id: askId, answer });
   } catch (error: unknown) {
     if (error instanceof AxiosError && error.response) {
-      throw error.response.data;
+      throw error;
     }
     throw error;
   }
