@@ -81,6 +81,11 @@ export const AddFriendDialog = () => {
       await Promise.all(selectedUsers.map(user => requestFriend(user.username)));
       setSearchResults([]);
       setSearchQuery('');
+      if (selectedUsers.length === 1) {
+        alert('친구 요청을 보냈습니다.');
+      } else {
+        alert(`${selectedUsers.length}명의 친구 요청을 보냈습니다.`);
+      }
     } catch (error: unknown) {
       console.error('친구 추가 중 오류가 발생했습니다:', error);
       if (error instanceof AxiosError && error.response?.status === HttpStatusCode.BadRequest) {
