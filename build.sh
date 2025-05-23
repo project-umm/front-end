@@ -12,6 +12,12 @@ echo -e "${BLUE}🧹 이전 빌드 파일 정리 중...${NC}"
 rm -rf dist/
 rm -rf .next/
 
+# 임시 파일 정리
+echo -e "${BLUE}🧹 임시 파일 정리 중...${NC}"
+rm -rf /private/var/folders/*/T/t-*
+rm -rf ~/Library/Caches/electron*
+rm -rf ~/Library/Caches/electron-builder
+
 # build 디렉토리 생성
 echo -e "${BLUE}📁 build 디렉토리 생성 중...${NC}"
 mkdir -p build
