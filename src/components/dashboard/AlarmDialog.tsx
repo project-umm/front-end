@@ -37,10 +37,11 @@ export const AlarmDialog = ({ notificationCount = 0 }: AlarmDialogProps) => {
     switch (os) {
       case 'windows':
         downloadUrl =
-          'https://github.com/project-umm/front-end/releases/latest/download/UMM.Setup.exe';
+          'https://github.com/project-umm/front-end/releases/download/latest/UMM-Setup-0.1.0.exe';
         break;
       case 'mac':
-        downloadUrl = 'https://github.com/project-umm/front-end/releases/latest/download/UMM.dmg';
+        downloadUrl =
+          'https://github.com/project-umm/front-end/releases/download/latest/UMM-0.1.0.dmg';
         break;
       default:
         alert('지원하지 않는 운영체제입니다.');
