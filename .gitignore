@@ -20,6 +20,16 @@
 # production
 /build
 
+# electron
+!dist/latest.yml
+!dist/*-mac.zip
+!dist/*-win.exe
+!dist/*-linux.AppImage
+/dist/*
+*.app
+*.exe
+*.dmg
+
 # misc
 .DS_Store
 *.pem

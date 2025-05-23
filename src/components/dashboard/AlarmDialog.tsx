@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBell } from '@fortawesome/free-solid-svg-icons';
+import { faBell, faDownload } from '@fortawesome/free-solid-svg-icons';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,17 @@ import {
 } from '@/components/ui/dialog';
 import { getFriendRequests, answerFriendRequest, FriendRequest } from '@/api/friend';
 
+// OS 감지 함수
+const getOS = () => {
+  if (typeof window === 'undefined') return 'unknown';
+
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  if (userAgent.includes('win')) return 'windows';
+  if (userAgent.includes('mac')) return 'mac';
+  if (userAgent.includes('linux')) return 'linux';
+  return 'unknown';
+};
+
 interface AlarmDialogProps {
   notificationCount?: number;
 }
@@ -18,6 +29,28 @@ interface AlarmDialogProps {
 export const AlarmDialog = ({ notificationCount = 0 }: AlarmDialogProps) => {
   const [open, setOpen] = useState(false);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
+
+  const handleDownload = () => {
+    const os = getOS();
+    let downloadUrl = '';
+
+    switch (os) {
+      case 'windows':
+        downloadUrl = 'https://github.com/project-umm/umm/releases/latest/download/UMM.Setup.exe';
+        break;
+      case 'mac':
+        downloadUrl = 'https://github.com/project-umm/umm/releases/latest/download/UMM.dmg';
+        break;
+      case 'linux':
+        downloadUrl = 'https://github.com/project-umm/umm/releases/latest/download/UMM.AppImage';
+        break;
+      default:
+        alert('지원하지 않는 운영체제입니다.');
+        return;
+    }
+
+    window.location.href = downloadUrl;
+  };
 
   const fetchRequests = async () => {
     try {
@@ -58,6 +91,12 @@ export const AlarmDialog = ({ notificationCount = 0 }: AlarmDialogProps) => {
           )}
         </button>
       </DialogTrigger>
+      <button onClick={handleDownload} className="cursor-pointer ml-2" title="앱 다운로드">
+        <FontAwesomeIcon
+          icon={faDownload}
+          className="text-2xl hover:bg-umm-gray rounded-full transition-colors p-1"
+        />
+      </button>
       <DialogContent className="sm:max-w-[425px] bg-black text-white border-[#222225]">
         <DialogHeader className="flex flex-row items-center justify-between mb-2">
           <DialogTitle className="text-lg font-bold">알림</DialogTitle>
