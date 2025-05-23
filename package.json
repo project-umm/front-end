@@ -2,6 +2,11 @@
   "name": "UMM",
   "version": "0.1.0",
   "private": true,
+  "author": {
+    "name": "Project UMM",
+    "email": "project.umm@gmail.com"
+  },
+  "description": "Universal Mod Manager",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -87,22 +92,31 @@
     },
     "win": {
       "target": [
-        "nsis"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "icon": "public/umm.ico",
       "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
+      "oneClick": true,
+      "perMachine": true,
       "deleteAppDataOnUninstall": true,
-      "createDesktopShortcut": true,
+      "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
       "shortcutName": "UMM",
       "installerIcon": "public/umm.ico",
       "uninstallerIcon": "public/umm.ico",
-      "installerHeaderIcon": "public/umm.ico"
+      "installerHeaderIcon": "public/umm.ico",
+      "menuCategory": true,
+      "runAfterFinish": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "include": "installer.nsh"
     },
     "linux": {
       "target": [
