@@ -92,6 +92,18 @@
       "icon": "public/umm.ico",
       "artifactName": "${productName}-Setup-${version}.${ext}"
     },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "UMM",
+      "installerIcon": "public/umm.ico",
+      "uninstallerIcon": "public/umm.ico",
+      "installerHeaderIcon": "public/umm.ico"
+    },
     "linux": {
       "target": [
         "AppImage",
