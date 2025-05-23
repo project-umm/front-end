@@ -1,8 +1,9 @@
 import { app, BrowserWindow } from 'electron';
-import isDev from 'electron-is-dev';
-import { autoUpdater } from 'electron-updater';
+import pkg from 'electron-updater';
+const { autoUpdater } = pkg;
 
 const PRODUCTION_URL = 'https://www.project-umm.com';
+const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
 
 // 자동 업데이트 설정
 function setupAutoUpdater() {
@@ -39,7 +40,6 @@ function createWindow() {
     },
   });
 
-  // 개발 환경에서는 localhost, 프로덕션 환경에서는 배포 URL 사용
   mainWindow.loadURL(isDev ? 'http://localhost:3000' : PRODUCTION_URL);
 
   if (isDev) {
