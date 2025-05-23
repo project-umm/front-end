@@ -36,13 +36,11 @@ export const AlarmDialog = ({ notificationCount = 0 }: AlarmDialogProps) => {
 
     switch (os) {
       case 'windows':
-        downloadUrl = 'https://github.com/project-umm/umm/releases/latest/download/UMM.Setup.exe';
+        downloadUrl =
+          'https://github.com/project-umm/front-end/releases/latest/download/UMM.Setup.exe';
         break;
       case 'mac':
-        downloadUrl = 'https://github.com/project-umm/umm/releases/latest/download/UMM.dmg';
-        break;
-      case 'linux':
-        downloadUrl = 'https://github.com/project-umm/umm/releases/latest/download/UMM.AppImage';
+        downloadUrl = 'https://github.com/project-umm/front-end/releases/latest/download/UMM.dmg';
         break;
       default:
         alert('지원하지 않는 운영체제입니다.');
@@ -70,7 +68,7 @@ export const AlarmDialog = ({ notificationCount = 0 }: AlarmDialogProps) => {
   const handleAnswer = async (askId: number, answer: boolean) => {
     try {
       await answerFriendRequest(askId, answer);
-      await fetchRequests(); // 목록 새로고침
+      await fetchRequests();
     } catch (error) {
       console.error('친구 요청 응답 중 오류가 발생했습니다:', error);
     }

@@ -21,14 +21,7 @@
 /build
 
 # electron
-!dist/latest.yml
-!dist/*-mac.zip
-!dist/*-win.exe
-!dist/*-linux.AppImage
-/dist/*
-*.app
-*.exe
-*.dmg
+dist
 
 # misc
 .DS_Store
@@ -43,6 +36,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+
 # vercel
 .vercel
 
