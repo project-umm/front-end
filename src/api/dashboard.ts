@@ -29,7 +29,7 @@ export const getDashboard = async (): Promise<DashboardResponse> => {
     return response.data;
   } catch (error: unknown) {
     if (error instanceof AxiosError && error.response) {
-      return error.response.data;
+      throw error;
     }
     throw error;
   }
