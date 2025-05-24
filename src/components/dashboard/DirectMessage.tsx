@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import { getAccessToken } from '@/api/token';
 import { DmChat, getIndividualDm } from '@/api/dm';
 import { getMyProfile } from '@/api/user';
-
+import { decryptWithKey } from '@/lib/crypto';
 export const DirectMessage = () => {
   const router = useRouter();
   const { dm_id } = router.query;
@@ -33,12 +33,12 @@ export const DirectMessage = () => {
 
   useEffect(() => {
     if (!dm_id) return;
-
+    const decryptedDmId = decryptWithKey(dm_id as string);
     const token = getAccessToken();
 
     const fetchDmAndSetupStomp = async () => {
       try {
-        const dmResponse = await getIndividualDm(dm_id as string);
+        const dmResponse = await getIndividualDm(decryptedDmId as string);
         setMessages(dmResponse.chats);
 
         const client = new Client({
@@ -48,7 +48,7 @@ export const DirectMessage = () => {
           },
           onConnect: () => {
             console.log('Connected to STOMP');
-            client.subscribe(`/sub/${dm_id}`, message => {
+            client.subscribe(`/sub/${decryptedDmId}`, message => {
               const receivedMessage: DmChat = JSON.parse(message.body);
               setMessages(prev => [...prev, receivedMessage]);
             });
@@ -105,13 +105,19 @@ export const DirectMessage = () => {
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim() || !clientRef.current || !dm_id || !clientRef.current.connected) {
+    const decryptedDmId = decryptWithKey(dm_id as string);
+    if (
+      !inputMessage.trim() ||
+      !clientRef.current ||
+      !decryptedDmId ||
+      !clientRef.current.connected
+    ) {
       console.warn('Cannot send message: Not connected, message is empty, or dm_id is missing.');
       return;
     }
 
     clientRef.current.publish({
-      destination: `/pub/${dm_id}`,
+      destination: `/pub/${decryptedDmId}`,
       headers: {
         Authorization: `Bearer ${getAccessToken()}`,
       },

@@ -6,6 +6,7 @@ import { getDmList } from '@/api/dm';
 import Router from 'next/router';
 import Image from 'next/image';
 import { DirectMessageDialog } from './DirectMessageDialog';
+import { encryptWithKey } from '@/lib/crypto';
 interface SidebarProps {
   profileUrl?: string;
   nickname?: string;
@@ -52,7 +53,7 @@ export const Sidebar = ({ profileUrl, nickname }: SidebarProps) => {
                   <div
                     className="flex items-center gap-4 cursor-pointer "
                     onClick={() => {
-                      Router.push(`/dashboard?menu=dm&dm_id=${dm.dm_id}`);
+                      Router.push(`/dashboard?menu=dm&dm_id=${encryptWithKey(dm.dm_id)}`);
                     }}
                   >
                     <Image

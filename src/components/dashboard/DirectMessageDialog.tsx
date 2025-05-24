@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { HttpStatusCode, AxiosError } from 'axios';
 import Router from 'next/router';
-
+import { encryptWithKey } from '@/lib/crypto';
 interface SearchResult {
   id: string;
   username: string;
@@ -104,7 +104,8 @@ export const DirectMessageDialog = () => {
       setSearchResults(allFriends.map(f => ({ ...f, isSelected: false })));
       setSearchQuery('');
       setOpen(false);
-      Router.push(`/dashboard?menu=dm&dm_id=${response.dm_id}`);
+      const encryptedDmId = encryptWithKey(response.dm_id);
+      Router.push(`/dashboard?menu=dm&dm_id=${encryptedDmId}`);
     } catch (error: unknown) {
       console.error('DM 생성 중 오류가 발생했습니다:', error);
       if (error instanceof AxiosError && error.response?.status === HttpStatusCode.BadRequest) {
