@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import dayjs from 'dayjs';
 import { getAccessToken } from '@/api/token';
-import { DmChat } from '@/api/dm';
+import { DmChat, getIndividualDm } from '@/api/dm';
 import { getMyProfile } from '@/api/user';
 
 export const DirectMessage = () => {
@@ -14,6 +14,9 @@ export const DirectMessage = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [currentUserName, setCurrentUserName] = useState('');
   const clientRef = useRef<Client | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const [userScrolledUp, setUserScrolledUp] = useState(false);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -33,38 +36,84 @@ export const DirectMessage = () => {
 
     const token = getAccessToken();
 
-    const client = new Client({
-      brokerURL: process.env.NEXT_PUBLIC_API_URL,
-      connectHeaders: {
-        Authorization: `Bearer ${token}`,
-      },
-      onConnect: () => {
-        console.log('Connected to STOMP');
-        client.subscribe(`/sub/${dm_id}`, message => {
-          const receivedMessage: DmChat = JSON.parse(message.body);
-          setMessages(prev => [...prev, receivedMessage]);
-        });
-      },
-    });
+    const fetchDmAndSetupStomp = async () => {
+      try {
+        const dmResponse = await getIndividualDm(dm_id as string);
+        setMessages(dmResponse.chats);
 
-    client.activate();
-    clientRef.current = client;
+        const client = new Client({
+          brokerURL: process.env.NEXT_PUBLIC_API_URL,
+          connectHeaders: {
+            Authorization: `Bearer ${token}`,
+          },
+          onConnect: () => {
+            console.log('Connected to STOMP');
+            client.subscribe(`/sub/${dm_id}`, message => {
+              const receivedMessage: DmChat = JSON.parse(message.body);
+              setMessages(prev => [...prev, receivedMessage]);
+            });
+          },
+          onStompError: frame => {
+            console.error('Broker reported error: ' + frame.headers['message']);
+            console.error('Additional details: ' + frame.body);
+          },
+          onWebSocketError: event => {
+            console.error('WebSocket error: ', event);
+          },
+        });
+
+        client.activate();
+        clientRef.current = client;
+      } catch (error) {
+        console.error('Error fetching DM or setting up STOMP:', error);
+      }
+    };
+
+    fetchDmAndSetupStomp();
 
     return () => {
-      if (client.connected) {
-        client.deactivate();
+      if (clientRef.current && clientRef.current.connected) {
+        console.log('Deactivating STOMP client');
+        clientRef.current.deactivate();
+        clientRef.current = null;
       }
     };
   }, [dm_id]);
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (!userScrolledUp) {
+      scrollToBottom();
+    }
+  }, [messages, userScrolledUp]);
+
+  const handleScroll = () => {
+    const container = chatContainerRef.current;
+    if (container) {
+      const isScrolledToBottom =
+        container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+      if (!isScrolledToBottom) {
+        setUserScrolledUp(true);
+      } else {
+        setUserScrolledUp(false);
+      }
+    }
+  };
+
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim() || !clientRef.current || !dm_id) return;
+    if (!inputMessage.trim() || !clientRef.current || !dm_id || !clientRef.current.connected) {
+      console.warn('Cannot send message: Not connected, message is empty, or dm_id is missing.');
+      return;
+    }
 
     clientRef.current.publish({
       destination: `/pub/${dm_id}`,
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${getAccessToken()}`,
       },
       body: JSON.stringify({
         chat_message: inputMessage,
@@ -76,7 +125,11 @@ export const DirectMessage = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div
+        ref={chatContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+      >
         {messages.map((msg, index) => {
           const isMyMessage = msg.username === currentUserName;
 
@@ -85,7 +138,7 @@ export const DirectMessage = () => {
               key={index}
               className={`flex items-start gap-2 ${isMyMessage ? 'flex-row-reverse' : ''}`}
             >
-              {!isMyMessage && (
+              {!isMyMessage && msg.profile_url && (
                 <Image
                   src={msg.profile_url}
                   alt={msg.nickname}
@@ -97,16 +150,12 @@ export const DirectMessage = () => {
               <div className={`flex flex-col ${isMyMessage ? 'items-end' : 'items-start'}`}>
                 {!isMyMessage && <span className="font-bold text-sm mb-1">{msg.nickname}</span>}
                 <div className="flex items-end gap-2">
-                  {!isMyMessage && (
-                    <div className={`max-w-[70%] break-words bg-umm-gray rounded-lg px-3 py-2`}>
-                      <p className="text-white">{msg.chat_message}</p>
-                    </div>
-                  )}
-                  {isMyMessage && (
-                    <div className={`max-w-[70%] break-words bg-blue-500 rounded-lg px-3 py-2`}>
-                      <p className="text-white">{msg.chat_message}</p>
-                    </div>
-                  )}
+                  <div
+                    className={`max-w-[70%] break-words rounded-lg px-3 py-2 bg-umm-gray
+                    `}
+                  >
+                    <p className="text-white">{msg.chat_message}</p>
+                  </div>
                   <span className="text-xs text-gray-500">
                     {dayjs(msg.created_at).format('YYYY-MM-DD HH:mm')}
                   </span>
@@ -115,6 +164,7 @@ export const DirectMessage = () => {
             </div>
           );
         })}
+        <div ref={messagesEndRef} />
       </div>
       <form onSubmit={sendMessage} className="pb-3 border-umm-gray">
         <div className="flex gap-2">

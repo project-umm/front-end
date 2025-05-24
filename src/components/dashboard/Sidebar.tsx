@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import React, { useEffect, useState, Fragment } from 'react';
 import { FriendButton } from './FriendButton';
 import { UserProfile } from './UserProfile';
 import { DmList } from '@/api/dm';
 import { getDmList } from '@/api/dm';
 import Router from 'next/router';
 import Image from 'next/image';
+import { DirectMessageDialog } from './DirectMessageDialog';
 interface SidebarProps {
   profileUrl?: string;
   nickname?: string;
@@ -46,31 +45,27 @@ export const Sidebar = ({ profileUrl, nickname }: SidebarProps) => {
             <FriendButton />
           </div>
           <div className="w-full h-full p-3">
-            <div className="w-full flex items-center justify-between">
-              <b className="text-md">다이렉트 메세지</b>
-              <FontAwesomeIcon
-                icon={faPlus}
-                className="text-sm hover:bg-umm-gray p-1 rounded-full transition-colors cursor-pointer"
-              />
-            </div>
+            <DirectMessageDialog />
             <div className="w-full h-[calc(100%-2rem)] overflow-y-auto flex flex-col gap-2 py-4">
               {dmList.map(dm => (
-                <div
-                  key={dm.username}
-                  className="flex items-center gap-4 cursor-pointer"
-                  onClick={() => {
-                    Router.push(`/dashboard?menu=dm&dm_id=${dm.dm_id}`);
-                  }}
-                >
-                  <Image
-                    src={dm.profile_url || '/favicon.ico'}
-                    alt={dm.nickname}
-                    width={30}
-                    height={30}
-                    className="object-cover border-[#222225] border rounded-full"
-                  />
-                  {dm.nickname}
-                </div>
+                <Fragment key={dm.username}>
+                  <div
+                    className="flex items-center gap-4 cursor-pointer "
+                    onClick={() => {
+                      Router.push(`/dashboard?menu=dm&dm_id=${dm.dm_id}`);
+                    }}
+                  >
+                    <Image
+                      src={dm.profile_url || '/favicon.ico'}
+                      alt={dm.nickname}
+                      width={30}
+                      height={30}
+                      className="object-cover border-[#222225] border rounded-full"
+                    />
+                    {dm.nickname}
+                  </div>
+                  {!dm.is_read && <div className="w-3 h-3 rounded-full bg-red-500" />}
+                </Fragment>
               ))}
             </div>
           </div>
