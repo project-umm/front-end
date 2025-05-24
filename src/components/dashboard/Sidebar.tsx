@@ -59,7 +59,7 @@ export const Sidebar = ({ profileUrl, nickname }: SidebarProps) => {
                   key={dm.username}
                   className="flex items-center gap-4 cursor-pointer"
                   onClick={() => {
-                    Router.push(`/dashboard?dm_id=${dm.dm_id}`);
+                    Router.push(`/dashboard?menu=dm&dm_id=${dm.dm_id}`);
                   }}
                 >
                   <Image

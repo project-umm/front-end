@@ -1,5 +1,7 @@
 import React, { useState, KeyboardEvent } from 'react';
 import { Search } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUserPlus } from '@fortawesome/free-solid-svg-icons';
 import { getUsers, requestFriend } from '@/api/friend';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -103,7 +105,8 @@ export const AddFriendDialog = () => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <button className="hover:bg-umm-gray text-white rounded-lg whitespace-nowrap p-1 cursor-pointer">
+        <button className="hover:bg-umm-gray flex items-center gap-2 text-white rounded-lg whitespace-nowrap p-1 cursor-pointer px-2">
+          <FontAwesomeIcon icon={faUserPlus} className="text-xl" />
           <b>친구 추가하기</b>
         </button>
       </DialogTrigger>

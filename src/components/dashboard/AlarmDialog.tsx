@@ -29,6 +29,27 @@ interface AlarmDialogProps {
 export const AlarmDialog = ({ notificationCount = 0 }: AlarmDialogProps) => {
   const [open, setOpen] = useState(false);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
+  const [isElectron, setIsElectron] = useState(false);
+
+  useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    setIsElectron(userAgent.indexOf('electron/') > -1);
+  }, []);
+
+  const fetchRequests = async () => {
+    try {
+      const response = await getFriendRequests();
+      setRequests(response.ask_users);
+    } catch (error) {
+      console.error('친구 요청 목록을 불러오는데 실패했습니다:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      fetchRequests();
+    }
+  }, [open]);
 
   const handleDownload = () => {
     const os = getOS();
@@ -50,21 +71,6 @@ export const AlarmDialog = ({ notificationCount = 0 }: AlarmDialogProps) => {
 
     window.location.href = downloadUrl;
   };
-
-  const fetchRequests = async () => {
-    try {
-      const response = await getFriendRequests();
-      setRequests(response.ask_users);
-    } catch (error) {
-      console.error('친구 요청 목록을 불러오는데 실패했습니다:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (open) {
-      fetchRequests();
-    }
-  }, [open]);
 
   const handleAnswer = async (askId: number, answer: boolean) => {
     try {
@@ -90,12 +96,14 @@ export const AlarmDialog = ({ notificationCount = 0 }: AlarmDialogProps) => {
           )}
         </button>
       </DialogTrigger>
-      <button onClick={handleDownload} className="cursor-pointer ml-2" title="앱 다운로드">
-        <FontAwesomeIcon
-          icon={faDownload}
-          className="text-2xl hover:bg-umm-gray rounded-full transition-colors p-1"
-        />
-      </button>
+      {isElectron ? null : (
+        <button onClick={handleDownload} className="cursor-pointer ml-2" title="앱 다운로드">
+          <FontAwesomeIcon
+            icon={faDownload}
+            className="text-2xl hover:bg-umm-gray rounded-full transition-colors p-1"
+          />
+        </button>
+      )}
       <DialogContent className="sm:max-w-[425px] bg-black text-white border-[#222225]">
         <DialogHeader className="flex flex-row items-center justify-between mb-2">
           <DialogTitle className="text-lg font-bold">알림</DialogTitle>

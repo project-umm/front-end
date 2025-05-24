@@ -4,12 +4,25 @@ import { AddFriendDialog } from './AddFriendDialog';
 import { AlarmDialog } from './AlarmDialog';
 import { getFriendRequests } from '@/api/friend';
 import { DirectMessage } from './DirectMessage';
+import { FriendsList } from './FriendsList';
+import { useRouter } from 'next/router';
+
 interface MainContentProps {
   alarmNumber?: number;
 }
 
 export const MainContent = ({ alarmNumber }: MainContentProps) => {
   const [notificationCount, setNotificationCount] = useState(alarmNumber || 0);
+  const router = useRouter();
+  const [status, setStatus] = useState('dm');
+
+  useEffect(() => {
+    if (router.query.menu === 'friends') {
+      setStatus('friends');
+    } else {
+      setStatus('dm');
+    }
+  }, [router.query]);
 
   const fetchFriendRequests = async () => {
     try {
@@ -37,7 +50,7 @@ export const MainContent = ({ alarmNumber }: MainContentProps) => {
       </div>
       <div className="w-full h-full flex">
         <div className="w-2/3 h-full border-r-2 border-umm-gray p-3">
-          <DirectMessage />
+          {status === 'friends' ? <FriendsList /> : <DirectMessage />}
         </div>
         <div className="w-1/3 h-full p-3">
           <b>현재 활동 중</b>
