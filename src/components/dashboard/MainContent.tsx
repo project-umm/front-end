@@ -3,7 +3,7 @@ import { FriendButton } from './FriendButton';
 import { AddFriendDialog } from './AddFriendDialog';
 import { AlarmDialog } from './AlarmDialog';
 import { getFriendRequests } from '@/api/friend';
-
+import { DirectMessage } from './DirectMessage';
 interface MainContentProps {
   alarmNumber?: number;
 }
@@ -36,7 +36,9 @@ export const MainContent = ({ alarmNumber }: MainContentProps) => {
         </div>
       </div>
       <div className="w-full h-full flex">
-        <div className="w-2/3 h-full border-r-2 border-umm-gray p-3">채팅창 자리</div>
+        <div className="w-2/3 h-full border-r-2 border-umm-gray p-3">
+          <DirectMessage />
+        </div>
         <div className="w-1/3 h-full p-3">
           <b>현재 활동 중</b>
         </div>

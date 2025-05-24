@@ -1,10 +1,6 @@
 import axiosInstance from './axios';
 import { AxiosError } from 'axios';
 
-export interface UserProfile {
-  profile_url: string;
-}
-
 export interface User {
   profile_url: string;
   nickname: string;
@@ -12,7 +8,9 @@ export interface User {
 }
 
 export interface UserProfileResponse {
-  profile: UserProfile;
+  profile_url: string;
+  nickname: string;
+  username: string;
 }
 
 export interface UsersResponse {

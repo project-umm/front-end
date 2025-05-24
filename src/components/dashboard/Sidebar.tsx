@@ -3,25 +3,29 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FriendButton } from './FriendButton';
 import { UserProfile } from './UserProfile';
-import { getFriends } from '@/api/friend';
-import { User } from '@/api/user';
+import { DmList } from '@/api/dm';
+import { getDmList } from '@/api/dm';
+import Router from 'next/router';
 import Image from 'next/image';
-
 interface SidebarProps {
   profileUrl?: string;
   nickname?: string;
 }
 
 export const Sidebar = ({ profileUrl, nickname }: SidebarProps) => {
-  const [friends, setFriends] = useState<User[]>([]);
+  const [dmList, setDmList] = useState<DmList[]>([]);
 
   useEffect(() => {
-    const fetchFriends = async () => {
-      const fetchedFriends = await getFriends();
-      setFriends(fetchedFriends.friends);
+    const fetchDmList = async () => {
+      try {
+        const fetchedDmList = await getDmList();
+        setDmList(fetchedDmList.dms);
+      } catch (error) {
+        console.error('Error fetching DM list:', error);
+      }
     };
 
-    fetchFriends();
+    fetchDmList();
   }, []);
 
   return (
@@ -50,16 +54,22 @@ export const Sidebar = ({ profileUrl, nickname }: SidebarProps) => {
               />
             </div>
             <div className="w-full h-[calc(100%-2rem)] overflow-y-auto flex flex-col gap-2 py-4">
-              {friends.map(friend => (
-                <div key={friend.username} className="flex items-center gap-4">
+              {dmList.map(dm => (
+                <div
+                  key={dm.username}
+                  className="flex items-center gap-4 cursor-pointer"
+                  onClick={() => {
+                    Router.push(`/dashboard?dm_id=${dm.dm_id}`);
+                  }}
+                >
                   <Image
-                    src={friend.profile_url || '/favicon.ico'}
-                    alt={friend.nickname}
+                    src={dm.profile_url || '/favicon.ico'}
+                    alt={dm.nickname}
                     width={30}
                     height={30}
                     className="object-cover border-[#222225] border rounded-full"
                   />
-                  {friend.nickname}
+                  {dm.nickname}
                 </div>
               ))}
             </div>
