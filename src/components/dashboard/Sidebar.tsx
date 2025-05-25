@@ -5,8 +5,8 @@ import { DmList } from '@/api/dm';
 import { getDmList } from '@/api/dm';
 import Router from 'next/router';
 import Image from 'next/image';
-import { DirectMessageDialog } from './DirectMessageDialog';
 import { encryptWithKey } from '@/lib/crypto';
+import { DirectMessageDialog } from './direct-message/DirectMessageDialog';
 interface SidebarProps {
   profileUrl?: string;
   nickname?: string;

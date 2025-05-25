@@ -3,8 +3,8 @@ import { FriendButton } from './FriendButton';
 import { AddFriendDialog } from './AddFriendDialog';
 import { AlarmDialog } from './AlarmDialog';
 import { getFriendRequests } from '@/api/friend';
-import { DirectMessage } from './DirectMessage';
 import { FriendsList } from './FriendsList';
+import { DirectMessage } from './direct-message/DirectMessage';
 import { useRouter } from 'next/router';
 
 interface MainContentProps {
