@@ -1,8 +1,8 @@
-import React, { useState, KeyboardEvent } from 'react';
-import { Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserPlus } from '@fortawesome/free-solid-svg-icons';
-import { getUsers, requestFriend } from '@/api/friend';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { getFriends } from '@/api/friend';
+import { createDm } from '@/api/dm';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,7 +15,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { HttpStatusCode, AxiosError } from 'axios';
-
+import Router from 'next/router';
+import { encryptWithKey } from '@/lib/crypto';
 interface SearchResult {
   id: string;
   username: string;
@@ -24,109 +25,125 @@ interface SearchResult {
   profile_url?: string;
 }
 
-export const AddFriendDialog = () => {
+export const DirectMessageDialog = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [open, setOpen] = useState(false);
+  const [allFriends, setAllFriends] = useState<SearchResult[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      const fetchFriends = async () => {
+        setIsSearching(true);
+        try {
+          const friendsData = await getFriends();
+          const friends = friendsData.friends.map(friend => ({
+            id: friend.username,
+            username: friend.username,
+            nickname: friend.nickname,
+            isSelected: false,
+            profile_url: friend.profile_url,
+          }));
+          setAllFriends(friends);
+          setSearchResults(friends);
+        } catch (error) {
+          console.error('친구 목록을 불러오는 중 오류가 발생했습니다:', error);
+          setAllFriends([]);
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      };
+      fetchFriends();
+    }
+  }, [open]);
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (!newOpen) {
       setSearchQuery('');
-      setSearchResults([]);
-      setIsSearching(false);
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-
-    setIsSearching(true);
-    try {
-      const users = await getUsers(searchQuery);
-      const searchResults = users.users.map(user => ({
-        id: user.username,
-        username: user.username,
-        nickname: user.nickname,
-        isSelected: false,
-        profile_url: user.profile_url,
-      }));
-      setSearchResults(searchResults);
-    } catch (error) {
-      console.error('검색 중 오류가 발생했습니다:', error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
+  const handleSearchInputChange = (query: string) => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setSearchResults(allFriends);
+      return;
     }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
+    const filteredResults = allFriends.filter(
+      user =>
+        user.nickname.toLowerCase().includes(query.toLowerCase()) ||
+        user.username.toLowerCase().includes(query.toLowerCase())
+    );
+    setSearchResults(filteredResults);
   };
 
   const handleCheckboxChange = (userId: string, checked: boolean) => {
     setSearchResults(prev =>
-      prev.map(user => (user.id === userId ? { ...user, isSelected: checked } : user))
+      prev.map(user =>
+        user.id === userId ? { ...user, isSelected: checked } : { ...user, isSelected: false }
+      )
+    );
+    setAllFriends(prev =>
+      prev.map(user =>
+        user.id === userId ? { ...user, isSelected: checked } : { ...user, isSelected: false }
+      )
     );
   };
 
-  const handleAddFriends = async () => {
-    const selectedUsers = searchResults.filter(user => user.isSelected);
-    if (selectedUsers.length === 0) return;
+  const handleCreateDM = async () => {
+    const selectedUser = searchResults.find(user => user.isSelected);
+    if (!selectedUser) return;
 
     setIsSubmitting(true);
     try {
-      await Promise.all(selectedUsers.map(user => requestFriend(user.username)));
-      setSearchResults([]);
+      const response = await createDm(selectedUser.username);
+      setSearchResults(allFriends.map(f => ({ ...f, isSelected: false })));
       setSearchQuery('');
-      if (selectedUsers.length === 1) {
-        alert('친구 요청을 보냈습니다.');
-      } else {
-        alert(`${selectedUsers.length}명의 친구 요청을 보냈습니다.`);
-      }
+      setOpen(false);
+      const encryptedDmId = encryptWithKey(response.dm_id);
+      Router.push(`/dashboard?menu=dm&dm_id=${encryptedDmId}`);
     } catch (error: unknown) {
-      console.error('친구 추가 중 오류가 발생했습니다:', error);
+      console.error('DM 생성 중 오류가 발생했습니다:', error);
       if (error instanceof AxiosError && error.response?.status === HttpStatusCode.BadRequest) {
         alert(error.response.data.message);
       } else {
-        alert('친구 요청 중 오류가 발생했습니다.');
+        alert('DM 생성 중 오류가 발생했습니다.');
       }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const selectedCount = searchResults.filter(user => user.isSelected).length;
+  const selectedUser = searchResults.find(user => user.isSelected);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <button className="hover:bg-umm-gray flex items-center gap-2 text-white rounded-lg whitespace-nowrap p-1 cursor-pointer px-2">
-          <FontAwesomeIcon icon={faUserPlus} className="text-xl" />
-          <b>친구 추가하기</b>
-        </button>
+        <div className="w-full flex items-center justify-between">
+          <b className="text-md">다이렉트 메세지</b>
+          <button onClick={() => setOpen(!open)} className="flex">
+            <FontAwesomeIcon
+              icon={faPlus}
+              className="text-sm hover:bg-umm-gray p-1 rounded-full transition-colors cursor-pointer"
+            />
+          </button>
+        </div>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] min-h-[300px]">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold">친구 추가하기</DialogTitle>
+          <DialogTitle className="text-lg font-bold">친구 선택하기</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <div className="relative">
             <Input
               placeholder="닉네임으로 검색하기"
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onChange={e => handleSearchInputChange(e.target.value)}
               className="pr-10"
-            />
-            <Search
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer"
-              size={20}
-              onClick={handleSearch}
             />
           </div>
           <div className="min-h-[200px] border overflow-y-auto border-umm-gray rounded-lg">
@@ -172,26 +189,30 @@ export const AddFriendDialog = () => {
             )}
 
             {isSearching && (
-              <div className="text-center text-gray-500 flex justify-center items-center">
-                검색 중...
+              <div className="text-center text-gray-500 flex justify-center items-center h-full">
+                친구 목록을 불러오는 중...
               </div>
             )}
 
-            {searchResults.length === 0 && searchQuery && !isSearching && (
+            {searchResults.length === 0 && !isSearching && allFriends.length > 0 && (
               <div className="text-center text-gray-500 w-full h-full flex justify-center items-center">
                 검색 결과가 없습니다.
+              </div>
+            )}
+
+            {searchResults.length === 0 && !isSearching && allFriends.length === 0 && (
+              <div className="text-center text-gray-500 w-full h-full flex justify-center items-center">
+                친구 목록이 없습니다.
               </div>
             )}
           </div>
           <div className="flex justify-end">
             <Button
-              onClick={handleAddFriends}
-              disabled={selectedCount === 0 || isSubmitting}
+              onClick={handleCreateDM}
+              disabled={!selectedUser || isSubmitting}
               className="bg-umm-gray text-white hover:bg-umm-gray/90 w-full"
             >
-              {isSubmitting
-                ? '처리 중...'
-                : `친구 추가하기 ${selectedCount > 0 ? `(${selectedCount})` : ''}`}
+              {isSubmitting ? '처리 중...' : `DM 생성`}
             </Button>
           </div>
         </div>
