@@ -59,9 +59,11 @@ export const getIndividualDm = async (
   }
 };
 
-export const createDm = async (): Promise<{ dm_id: string }> => {
+export const createDm = async (username: string): Promise<{ dm_id: string }> => {
   try {
-    const response = await axiosInstance.post<{ dm_id: string }>('/api/dms');
+    const response = await axiosInstance.post<{ dm_id: string }>('/api/dms', {
+      username,
+    });
     return response.data;
   } catch (error: unknown) {
     if (error instanceof AxiosError && error.response) {

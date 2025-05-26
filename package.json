@@ -32,6 +32,7 @@
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",
     "electron-is-dev": "^3.0.1",
     "electron-updater": "^6.6.2",
@@ -49,6 +50,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.1.7",
+    "@types/crypto-js": "^4.2.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

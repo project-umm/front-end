@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Fragment } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FriendButton } from './FriendButton';
 import { UserProfile } from './UserProfile';
 import { DmList } from '@/api/dm';
@@ -49,9 +49,9 @@ export const Sidebar = ({ profileUrl, nickname }: SidebarProps) => {
             <DirectMessageDialog />
             <div className="w-full h-[calc(100%-2rem)] overflow-y-auto flex flex-col gap-2 py-4">
               {dmList.map(dm => (
-                <Fragment key={dm.username}>
+                <div key={dm.username} className="flex items-center gap-2 justify-between">
                   <div
-                    className="flex items-center gap-4 cursor-pointer "
+                    className="flex items-center gap-4 cursor-pointer"
                     onClick={() => {
                       Router.push(`/dashboard?menu=dm&dm_id=${encryptWithKey(dm.dm_id)}`);
                     }}
@@ -65,8 +65,8 @@ export const Sidebar = ({ profileUrl, nickname }: SidebarProps) => {
                     />
                     {dm.nickname}
                   </div>
-                  {!dm.is_read && <div className="w-3 h-3 rounded-full bg-red-500" />}
-                </Fragment>
+                  {!dm.is_read && <div className="w-1 h-1 rounded-full bg-red-500" />}
+                </div>
               ))}
             </div>
           </div>

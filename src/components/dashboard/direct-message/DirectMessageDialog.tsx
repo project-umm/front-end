@@ -100,7 +100,7 @@ export const DirectMessageDialog = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await createDm();
+      const response = await createDm(selectedUser.username);
       setSearchResults(allFriends.map(f => ({ ...f, isSelected: false })));
       setSearchQuery('');
       setOpen(false);

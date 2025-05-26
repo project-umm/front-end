@@ -13,6 +13,7 @@ export const DirectMessage = () => {
   const router = useRouter();
   const { dm_id } = router.query;
   const [messages, setMessages] = useState<DmChat[]>([]);
+  const [isLast, setIsLast] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [currentUserName, setCurrentUserName] = useState('');
   const [key, setKey] = useState(0);
@@ -20,6 +21,7 @@ export const DirectMessage = () => {
   const [isLoadingNext, setIsLoadingNext] = useState(false);
   const listRef = useRef<List>(null);
   const clientRef = useRef<Client>(null);
+  const retryCountRef = useRef(0);
   const itemHeights = useRef<{ [index: number]: number }>({});
 
   // 현재 사용자 가져오기
@@ -40,23 +42,45 @@ export const DirectMessage = () => {
     if (!dm_id) return;
     const decryptedDmId = decryptWithKey(dm_id as string);
     const token = getAccessToken();
-    try {
-      const response = await getIndividualDm(decryptedDmId, key, 50);
-      setKey(response.key);
-      setMessages(response.chats);
 
+    const maxRetries = 5;
+
+    const connectWebSocket = () => {
       const client = new Client({
-        brokerURL: process.env.NEXT_PUBLIC_API_URL,
+        brokerURL: process.env.NEXT_PUBLIC_API_URL + '/websocket',
         connectHeaders: { Authorization: `Bearer ${token}` },
         onConnect: () => {
-          client.subscribe(`/sub/${decryptedDmId}`, message => {
+          retryCountRef.current = 0;
+          client.subscribe(`/sub/dms/${decryptedDmId}`, message => {
             const received: DmChat = JSON.parse(message.body);
             setMessages(prev => [...prev, received]);
           });
         },
+        onStompError: frame => {
+          console.error('STOMP Error:', frame.headers['message']);
+        },
+        onWebSocketClose: () => {
+          if (retryCountRef.current < maxRetries) {
+            console.warn(`WebSocket 연결 실패, ${retryCountRef.current + 1}번째 재시도 중...`);
+            retryCountRef.current++;
+            setTimeout(connectWebSocket, 1000 * retryCountRef.current);
+          } else {
+            console.error('WebSocket 연결 5회 실패. 더 이상 시도하지 않습니다.');
+          }
+        },
       });
+
       client.activate();
       clientRef.current = client;
+    };
+
+    try {
+      const response = await getIndividualDm(decryptedDmId, key, 50);
+      setIsLast(response.is_last);
+      setKey(response.key);
+      setMessages(response.chats);
+
+      connectWebSocket();
     } catch (error) {
       console.error('Error:', error);
     }
@@ -79,6 +103,7 @@ export const DirectMessage = () => {
       const response = await getIndividualDm(decryptedDmId, key, 50);
       setKey(response.key);
       setMessages(prev => [...response.chats, ...prev]);
+      setIsLast(response.is_last);
     } catch (error) {
       console.error('Error fetching previous messages:', error);
     } finally {
@@ -95,6 +120,7 @@ export const DirectMessage = () => {
       const response = await getIndividualDm(decryptedDmId, key, 50);
       setKey(response.key);
       setMessages(prev => [...prev, ...response.chats]);
+      setIsLast(response.is_last);
     } catch (error) {
       console.error('Error fetching next messages:', error);
     } finally {
@@ -106,14 +132,18 @@ export const DirectMessage = () => {
   useEffect(() => {
     const topObserver = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting) fetchPrevMessages();
+        if (entries[0].isIntersecting && !isLast) {
+          fetchPrevMessages();
+        }
       },
       { threshold: 0.1 }
     );
 
     const bottomObserver = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting) fetchNextMessages();
+        if (entries[0].isIntersecting && !isLast) {
+          fetchNextMessages();
+        }
       },
       { threshold: 0.1 }
     );
@@ -128,7 +158,7 @@ export const DirectMessage = () => {
       topObserver.disconnect();
       bottomObserver.disconnect();
     };
-  }, [fetchPrevMessages, fetchNextMessages]);
+  }, [fetchPrevMessages, fetchNextMessages, isLast]);
 
   // 메시지 전송
   const sendMessage = (e: React.FormEvent) => {
@@ -136,7 +166,7 @@ export const DirectMessage = () => {
     const decryptedDmId = decryptWithKey(dm_id as string);
     if (!inputMessage.trim() || !clientRef.current?.connected) return;
     clientRef.current.publish({
-      destination: `/pub/${decryptedDmId}`,
+      destination: `/pub/dms/${decryptedDmId}`,
       headers: { Authorization: `Bearer ${getAccessToken()}` },
       body: JSON.stringify({ chat_message: inputMessage }),
     });
