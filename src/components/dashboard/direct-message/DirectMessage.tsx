@@ -19,6 +19,7 @@ export const DirectMessage = () => {
   const [key, setKey] = useState(0);
   const [isLoadingPrev, setIsLoadingPrev] = useState(false);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
+  const [observersActive, setObserversActive] = useState(false);
   const listRef = useRef<List>(null);
   const clientRef = useRef<Client>(null);
   const retryCountRef = useRef(0);
@@ -81,6 +82,7 @@ export const DirectMessage = () => {
       setMessages(response.chats);
 
       connectWebSocket();
+      setObserversActive(true);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -130,9 +132,11 @@ export const DirectMessage = () => {
 
   // Intersection Observer
   useEffect(() => {
+    if (!observersActive) return;
+
     const topObserver = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && !isLast) {
+        if (entries[0].isIntersecting && !isLast && !isLoadingPrev) {
           fetchPrevMessages();
         }
       },
@@ -141,7 +145,7 @@ export const DirectMessage = () => {
 
     const bottomObserver = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && !isLast) {
+        if (entries[0].isIntersecting && !isLast && !isLoadingNext) {
           fetchNextMessages();
         }
       },
@@ -158,7 +162,14 @@ export const DirectMessage = () => {
       topObserver.disconnect();
       bottomObserver.disconnect();
     };
-  }, [fetchPrevMessages, fetchNextMessages, isLast]);
+  }, [fetchPrevMessages, fetchNextMessages, isLast, observersActive, isLoadingPrev, isLoadingNext]);
+
+  // 새 메시지 수신/전송 시 스크롤을 맨 아래로
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollToItem(messages.length - 1, 'end');
+    }
+  }, [messages]);
 
   // 메시지 전송
   const sendMessage = (e: React.FormEvent) => {
@@ -171,6 +182,11 @@ export const DirectMessage = () => {
       body: JSON.stringify({ chat_message: inputMessage }),
     });
     setInputMessage('');
+
+    // 전송 직후에도 맨 아래로 스크롤
+    if (listRef.current) {
+      listRef.current.scrollToItem(messages.length, 'end');
+    }
   };
 
   return (
@@ -183,7 +199,7 @@ export const DirectMessage = () => {
               height={height}
               width={width}
               itemCount={messages.length}
-              itemSize={index => itemHeights.current[index] || 80}
+              itemSize={index => itemHeights.current[index]}
               ref={listRef}
               itemData={{ messages, currentUserName, itemHeights, listRef }}
             >

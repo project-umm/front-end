@@ -6,7 +6,6 @@ import { VariableSizeList as List } from 'react-window';
 
 export const DirectMessageRow = ({
   index,
-  style,
   data,
 }: {
   index: number;
@@ -34,17 +33,15 @@ export const DirectMessageRow = ({
   }, [index, itemHeights, listRef]);
 
   return (
-    <div style={style}>
+    <div className="py-2">
       <div ref={rowRef} className={`flex gap-2 ${isMyMessage ? 'flex-row-reverse' : ''}`}>
-        {!isMyMessage && msg.profile_url && (
-          <Image
-            src={msg.profile_url}
-            alt={msg.nickname}
-            width={32}
-            height={32}
-            className="rounded-full object-cover"
-          />
-        )}
+        <Image
+          src={msg.profile_url || '/favicon.ico'}
+          alt={msg.nickname}
+          width={16}
+          height={16}
+          className="rounded-full object-fit w-10 h-10"
+        />
         <div className={`flex flex-col ${isMyMessage ? 'items-end' : 'items-start'}`}>
           {!isMyMessage && <span className="font-bold text-sm mb-1">{msg.nickname}</span>}
           <div className="flex items-end gap-2">
