@@ -17,9 +17,18 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const trimmedUsername = username.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    if (trimmedUsername === '' || trimmedPassword === '') {
+      alert('아이디와 비밀번호를 입력해주세요.');
+      return;
+    }
+
     const loginResponse = await login({
-      username,
-      password,
+      username: trimmedUsername,
+      password: trimmedPassword,
     });
 
     if (loginResponse.status === HttpStatusCode.Ok) {

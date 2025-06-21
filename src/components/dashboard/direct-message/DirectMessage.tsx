@@ -1,226 +1,305 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { VariableSizeList as List } from 'react-window';
-import { Client } from '@stomp/stompjs';
+import React, { useEffect, useState, memo, useLayoutEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import { DirectMessageRow } from './DirectMessageRow';
-import { getAccessToken } from '@/api/token';
-import { getIndividualDm, DmChat } from '@/api/dm';
+import Image from 'next/image';
 import { getMyProfile } from '@/api/user';
 import { decryptWithKey } from '@/lib/crypto';
-import AutoSizer from 'react-virtualized-auto-sizer';
+import { getIndividualDm, DmChat } from '@/api/dm';
+import { getAccessToken } from '@/api/token';
+import { Client } from '@stomp/stompjs';
+import dayjs from 'dayjs';
 
-export const DirectMessage = () => {
+const DirectMessage = memo(() => {
   const router = useRouter();
   const { dm_id } = router.query;
-  const [messages, setMessages] = useState<DmChat[]>([]);
-  const [isLast, setIsLast] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
+  const [mounted, setMounted] = useState(false);
   const [currentUserName, setCurrentUserName] = useState('');
-  const [key, setKey] = useState(0);
-  const [isLoadingPrev, setIsLoadingPrev] = useState(false);
-  const [isLoadingNext, setIsLoadingNext] = useState(false);
-  const [observersActive, setObserversActive] = useState(false);
-  const listRef = useRef<List>(null);
-  const clientRef = useRef<Client>(null);
-  const retryCountRef = useRef(0);
-  const itemHeights = useRef<{ [index: number]: number }>({});
+  const [decryptedDmId, setDecryptedDmId] = useState<string>('');
+  const [messages, setMessages] = useState<DmChat[]>([]);
+  const [newMessages, setNewMessages] = useState<DmChat[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const clientRef = useRef<Client | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // 현재 사용자 가져오기
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await getMyProfile();
-        setCurrentUserName(response.username);
-      } catch (error) {
-        console.error('Error fetching current user:', error);
+  // 모든 메시지 합치기
+  const allMessages = useMemo(() => {
+    return [...messages, ...newMessages];
+  }, [messages, newMessages]);
+
+  // 새 메시지 추가 함수
+  const addMessage = (newMessage: DmChat) => {
+    setNewMessages(prev => [...prev, newMessage]);
+    // 스크롤을 맨 아래로
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  // 컴포넌트 마운트 시 초기화
+  useLayoutEffect(() => {
+    setMounted(true);
+    return () => {
+      // 컴포넌트 언마운트 시 WebSocket 연결 정리
+      if (clientRef.current) {
+        try {
+          clientRef.current.deactivate();
+        } catch (error) {
+          console.log('언마운트 시 연결 정리:', error);
+        }
+        clientRef.current = null;
       }
     };
-    fetchCurrentUser();
   }, []);
 
-  // 초기 메시지 로드 및 STOMP 설정
-  const fetchInitialMessages = async () => {
-    if (!dm_id) return;
-    const decryptedDmId = decryptWithKey(dm_id as string);
-    const token = getAccessToken();
+  // 사용자 정보 조회
+  useEffect(() => {
+    if (mounted) {
+      const fetchCurrentUser = async () => {
+        try {
+          const response = await getMyProfile();
+          setCurrentUserName(response.username);
+        } catch (error) {
+          console.error('사용자 정보 조회 실패:', error);
+        }
+      };
+      fetchCurrentUser();
+    }
+  }, [mounted]);
 
-    const maxRetries = 5;
+  // dm_id 복호화 및 초기화
+  useEffect(() => {
+    if (dm_id && mounted) {
+      try {
+        const decrypted = decryptWithKey(dm_id as string);
+        setDecryptedDmId(decrypted);
+        setMessages([]);
+        setNewMessages([]);
 
-    const connectWebSocket = () => {
-      const client = new Client({
-        brokerURL: process.env.NEXT_PUBLIC_API_URL + '/websocket',
-        connectHeaders: { Authorization: `Bearer ${token}` },
-        onConnect: () => {
-          retryCountRef.current = 0;
-          client.subscribe(`/sub/dms/${decryptedDmId}`, message => {
-            const received: DmChat = JSON.parse(message.body);
-            setMessages(prev => [...prev, received]);
-          });
-        },
-        onStompError: frame => {
-          console.error('STOMP Error:', frame.headers['message']);
-        },
-        onWebSocketClose: () => {
-          if (retryCountRef.current < maxRetries) {
-            console.warn(`WebSocket 연결 실패, ${retryCountRef.current + 1}번째 재시도 중...`);
-            retryCountRef.current++;
-            setTimeout(connectWebSocket, 1000 * retryCountRef.current);
-          } else {
-            console.error('WebSocket 연결 5회 실패. 더 이상 시도하지 않습니다.');
+        // 메시지 로드 함수를 useEffect 내부에서 정의
+        const loadInitialMessages = async () => {
+          if (!decrypted || isLoading) return;
+
+          setIsLoading(true);
+          try {
+            const response = await getIndividualDm(decrypted, 0, 50);
+            setMessages(response.chats);
+          } catch (error) {
+            console.error('메시지 로드 실패:', error);
+          } finally {
+            setIsLoading(false);
           }
-        },
-      });
+        };
 
+        // 초기 메시지 로드
+        loadInitialMessages().then(() => {
+          // 스크롤을 맨 아래로
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+          }, 500);
+
+          // WebSocket 연결 시작
+          setTimeout(() => {
+            connectWebSocket(decrypted);
+          }, 1000);
+        });
+      } catch (error) {
+        console.error('dm_id 복호화 실패:', error);
+        setDecryptedDmId('복호화 실패');
+      }
+    } else if (!dm_id) {
+      setDecryptedDmId('');
+      setMessages([]);
+      setNewMessages([]);
+    }
+  }, [dm_id, mounted]);
+
+  // WebSocket 연결 함수 (단순화된 버전)
+  const connectWebSocket = (dmId: string) => {
+    // 기존 연결 정리
+    if (clientRef.current) {
+      try {
+        clientRef.current.deactivate();
+      } catch (error) {
+        console.log('기존 연결 정리:', error);
+      }
+      clientRef.current = null;
+    }
+
+    const token = getAccessToken();
+    if (!process.env.NEXT_PUBLIC_API_URL) {
+      return;
+    }
+
+    const client = new Client({
+      brokerURL: process.env.NEXT_PUBLIC_API_URL + '/websocket',
+      connectHeaders: { Authorization: `Bearer ${token}` },
+      reconnectDelay: 0, // 자동 재연결 비활성화
+      onConnect: () => {
+        try {
+          client.subscribe(`/sub/dms/${dmId}`, message => {
+            const received: DmChat = JSON.parse(message.body);
+            addMessage(received);
+          });
+        } catch (error) {
+          console.error('구독 실패:', error);
+        }
+      },
+      onStompError: () => {},
+      onWebSocketClose: () => {
+        clientRef.current = null;
+      },
+      onWebSocketError: () => {
+        clientRef.current = null;
+      },
+    });
+
+    try {
       client.activate();
       clientRef.current = client;
-    };
-
-    try {
-      const response = await getIndividualDm(decryptedDmId, key, 50);
-      setIsLast(response.is_last);
-      setKey(response.key);
-      setMessages(response.chats);
-
-      connectWebSocket();
-      setObserversActive(true);
     } catch (error) {
-      console.error('Error:', error);
+      console.log('WebSocket 연결 실패:', error);
     }
   };
-
-  useEffect(() => {
-    if (!dm_id) return;
-    fetchInitialMessages();
-    return () => {
-      clientRef.current?.deactivate();
-    };
-  }, [dm_id]);
-
-  // 이전 메시지 로드
-  const fetchPrevMessages = useCallback(async () => {
-    if (isLoadingPrev || !dm_id) return;
-    setIsLoadingPrev(true);
-    const decryptedDmId = decryptWithKey(dm_id as string);
-    try {
-      const response = await getIndividualDm(decryptedDmId, key, 50);
-      setKey(response.key);
-      setMessages(prev => [...response.chats, ...prev]);
-      setIsLast(response.is_last);
-    } catch (error) {
-      console.error('Error fetching previous messages:', error);
-    } finally {
-      setIsLoadingPrev(false);
-    }
-  }, [dm_id, isLoadingPrev, key]);
-
-  // 다음 메시지 로드
-  const fetchNextMessages = useCallback(async () => {
-    if (isLoadingNext || !dm_id) return;
-    setIsLoadingNext(true);
-    const decryptedDmId = decryptWithKey(dm_id as string);
-    try {
-      const response = await getIndividualDm(decryptedDmId, key, 50);
-      setKey(response.key);
-      setMessages(prev => [...prev, ...response.chats]);
-      setIsLast(response.is_last);
-    } catch (error) {
-      console.error('Error fetching next messages:', error);
-    } finally {
-      setIsLoadingNext(false);
-    }
-  }, [dm_id, isLoadingNext, key]);
-
-  // Intersection Observer
-  useEffect(() => {
-    if (!observersActive) return;
-
-    const topObserver = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting && !isLast && !isLoadingPrev) {
-          fetchPrevMessages();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    const bottomObserver = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting && !isLast && !isLoadingNext) {
-          fetchNextMessages();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    const topSentinel = document.getElementById('top-sentinel');
-    const bottomSentinel = document.getElementById('bottom-sentinel');
-
-    if (topSentinel) topObserver.observe(topSentinel);
-    if (bottomSentinel) bottomObserver.observe(bottomSentinel);
-
-    return () => {
-      topObserver.disconnect();
-      bottomObserver.disconnect();
-    };
-  }, [fetchPrevMessages, fetchNextMessages, isLast, observersActive, isLoadingPrev, isLoadingNext]);
-
-  // 새 메시지 수신/전송 시 스크롤을 맨 아래로
-  useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollToItem(messages.length - 1, 'end');
-    }
-  }, [messages]);
 
   // 메시지 전송
-  const sendMessage = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const decryptedDmId = decryptWithKey(dm_id as string);
-    if (!inputMessage.trim() || !clientRef.current?.connected) return;
-    clientRef.current.publish({
-      destination: `/pub/dms/${decryptedDmId}`,
-      headers: { Authorization: `Bearer ${getAccessToken()}` },
-      body: JSON.stringify({ chat_message: inputMessage }),
-    });
-    setInputMessage('');
 
-    // 전송 직후에도 맨 아래로 스크롤
-    if (listRef.current) {
-      listRef.current.scrollToItem(messages.length, 'end');
+    if (!inputMessage.trim()) {
+      return;
+    }
+
+    if (!clientRef.current?.connected) {
+      alert('WebSocket이 연결되지 않았습니다.');
+      return;
+    }
+
+    try {
+      clientRef.current.publish({
+        destination: `/pub/dms/${decryptedDmId}`,
+        headers: { Authorization: `Bearer ${getAccessToken()}` },
+        body: JSON.stringify({ chat_message: inputMessage }),
+      });
+      setInputMessage('');
+    } catch (error) {
+      console.error('메시지 전송 실패:', error);
+      alert('메시지 전송에 실패했습니다.');
     }
   };
 
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto">
-        <div id="top-sentinel" />
-        <AutoSizer>
-          {({ height, width }) => (
-            <List
-              height={height}
-              width={width}
-              itemCount={messages.length}
-              itemSize={index => itemHeights.current[index]}
-              ref={listRef}
-              itemData={{ messages, currentUserName, itemHeights, listRef }}
-            >
-              {DirectMessageRow}
-            </List>
-          )}
-        </AutoSizer>
-        <div id="bottom-sentinel" />
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputMessage(e.target.value);
+  };
+
+  if (!decryptedDmId) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div>DM을 불러오는 중...</div>
       </div>
-      <form onSubmit={sendMessage} className="pb-3 border-umm-gray flex gap-2 p-2">
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-105px)]" data-testid="directmessage">
+      {/* 메시지 영역 */}
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+        {/* 메시지 리스트 */}
+        {allMessages.map((message, index) => (
+          <div key={`${message.created_at}-${index}`} className="flex items-start space-x-2">
+            {message.username === currentUserName ? (
+              // 내 메시지: 오른쪽 정렬
+              <>
+                <div className="flex-1"></div>
+                <div className="flex flex-col items-end">
+                  <div className="px-4 py-2 rounded-lg bg-umm-gray text-white max-w-xs lg:max-w-md">
+                    <div className="break-words">{message.chat_message}</div>
+                  </div>
+                  <div className="text-xs mt-1 text-gray-500 text-right">
+                    {dayjs(message.created_at).format('HH:mm')}
+                  </div>
+                </div>
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center flex-shrink-0">
+                  {message.profile_url ? (
+                    <Image
+                      src={message.profile_url}
+                      alt={message.nickname}
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover"
+                    />
+                  ) : (
+                    <Image
+                      src="/favicon.ico"
+                      alt="기본 프로필"
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover"
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              // 상대방 메시지: 왼쪽 정렬
+              <>
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center flex-shrink-0">
+                  {message.profile_url ? (
+                    <Image
+                      src={message.profile_url}
+                      alt={message.nickname}
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover"
+                    />
+                  ) : (
+                    <Image
+                      src="/favicon.ico"
+                      alt="기본 프로필"
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover"
+                    />
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <div className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 max-w-xs lg:max-w-md">
+                    <div className="break-words">{message.chat_message}</div>
+                  </div>
+                  <div className="text-xs mt-1 text-gray-500 text-left">
+                    {dayjs(message.created_at).format('HH:mm')}
+                  </div>
+                </div>
+                <div className="flex-1"></div>
+              </>
+            )}
+          </div>
+        ))}
+
+        {/* 스크롤 앵커 */}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* 입력 영역 */}
+      <form onSubmit={handleSubmit} className="border-t border-umm-gray flex gap-2 p-4">
         <input
           type="text"
           value={inputMessage}
-          onChange={e => setInputMessage(e.target.value)}
-          className="flex-1 px-4 py-2 border rounded-lg border-umm-gray"
+          onChange={handleInputChange}
+          className="flex-1 px-4 py-2 border rounded-lg border-umm-gray focus:outline-none focus:ring-2 focus:ring-umm-gray"
           placeholder="메시지를 입력하세요..."
         />
-        <button type="submit" className="px-4 py-2 bg-umm-gray text-white rounded-lg">
+        <button
+          type="submit"
+          className="px-6 py-2 bg-umm-gray text-white rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!inputMessage.trim()}
+        >
           전송
         </button>
       </form>
     </div>
   );
-};
+});
+
+DirectMessage.displayName = 'DirectMessage';
+
+export { DirectMessage };
