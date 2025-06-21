@@ -6,6 +6,8 @@ import { getFriendRequests } from '@/api/friend';
 import { FriendsList } from './FriendsList';
 import { DirectMessage } from './direct-message/DirectMessage';
 import { useRouter } from 'next/router';
+import { User } from '@/api/user';
+import { getFriends } from '@/api/friend';
 
 interface MainContentProps {
   alarmNumber?: number;
@@ -13,6 +15,7 @@ interface MainContentProps {
 
 export const MainContent = ({ alarmNumber }: MainContentProps) => {
   const [notificationCount, setNotificationCount] = useState(alarmNumber || 0);
+  const [friends, setFriends] = useState<User[]>([]);
   const router = useRouter();
   const [status, setStatus] = useState('dm');
 
@@ -33,8 +36,18 @@ export const MainContent = ({ alarmNumber }: MainContentProps) => {
     }
   };
 
+  const fetchFriends = async () => {
+    try {
+      const response = await getFriends();
+      setFriends(response.friends);
+    } catch (error) {
+      console.error('친구 목록을 가져오는데 실패했습니다:', error);
+    }
+  };
+
   useEffect(() => {
     fetchFriendRequests();
+    fetchFriends();
   }, []);
 
   return (
@@ -45,12 +58,16 @@ export const MainContent = ({ alarmNumber }: MainContentProps) => {
           <AddFriendDialog />
         </div>
         <div className="flex justify-center items-center relative">
-          <AlarmDialog notificationCount={notificationCount} />
+          <AlarmDialog
+            notificationCount={notificationCount}
+            fetchFriendRequests={fetchFriendRequests}
+            fetchFriends={fetchFriends}
+          />
         </div>
       </div>
       <div className="w-full h-full flex">
         <div className="w-2/3 h-full border-r-2 border-umm-gray p-3">
-          {status === 'friends' ? <FriendsList /> : <DirectMessage />}
+          {status === 'friends' ? <FriendsList friends={friends} /> : <DirectMessage />}
         </div>
         <div className="w-1/3 h-full p-3">
           <b>현재 활동 중</b>

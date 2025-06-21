@@ -24,9 +24,15 @@ const getOS = () => {
 
 interface AlarmDialogProps {
   notificationCount?: number;
+  fetchFriendRequests: () => void;
+  fetchFriends: () => void;
 }
 
-export const AlarmDialog = ({ notificationCount = 0 }: AlarmDialogProps) => {
+export const AlarmDialog = ({
+  notificationCount = 0,
+  fetchFriendRequests,
+  fetchFriends,
+}: AlarmDialogProps) => {
   const [open, setOpen] = useState(false);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [isElectron, setIsElectron] = useState(false);
@@ -76,6 +82,8 @@ export const AlarmDialog = ({ notificationCount = 0 }: AlarmDialogProps) => {
     try {
       await answerFriendRequest(askId, answer);
       await fetchRequests();
+      await fetchFriendRequests();
+      await fetchFriends();
     } catch (error) {
       console.error('친구 요청 응답 중 오류가 발생했습니다:', error);
     }
@@ -90,7 +98,7 @@ export const AlarmDialog = ({ notificationCount = 0 }: AlarmDialogProps) => {
             className="text-2xl hover:bg-umm-gray rounded-full transition-colors p-1"
           />
           {notificationCount > 0 && (
-            <div className="absolute bottom-1 right-0 translate-x-1/2 translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+            <div className="absolute bottom-3 right-1 translate-x-1/2 translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
               {notificationCount}
             </div>
           )}
