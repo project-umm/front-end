@@ -1,24 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { getFriends } from '@/api/friend';
+import React from 'react';
 import { User } from '@/api/user';
 import Image from 'next/image';
 
-export const FriendsList = () => {
-  const [friends, setFriends] = useState<User[]>([]);
+interface FriendsListProps {
+  friends: User[];
+}
 
-  useEffect(() => {
-    const fetchFriends = async () => {
-      try {
-        const response = await getFriends();
-        setFriends(response.friends);
-      } catch (error) {
-        console.error('친구 목록을 가져오는데 실패했습니다:', error);
-      }
-    };
-
-    fetchFriends();
-  }, []);
-
+export const FriendsList = ({ friends }: FriendsListProps) => {
   return (
     <div className="w-full h-full flex flex-col gap-2 p-3">
       {friends.map(friend => (
